@@ -32,7 +32,13 @@ public class PdfFileReader {
                 .build();
 
         var pdfReader = new PagePdfDocumentReader(pdfResource, config);
-        var textSplitter = new TokenTextSplitter();
+        var textSplitter = new TokenTextSplitter(
+                512,    // Chunk size
+                200,    // Chunk overlap
+                100,    // Min length
+                5000,   // Max chunks
+                true    // Keep separators
+        );
         vectorStore.accept(textSplitter.apply(pdfReader.get()));
 
     }
