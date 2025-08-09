@@ -1,0 +1,19 @@
+meta {
+  name: testing
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:8090/rag?query=max height of cars
+  body: none
+  auth: inherit
+}
+
+params:query {
+  query: max height of cars
+}
+
+settings {
+  encodeUrl: true
+}
