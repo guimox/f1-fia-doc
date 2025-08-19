@@ -9,6 +9,14 @@
         <version>3.4.8</version>
         <relativePath />
     </parent>
+    <profiles>
+		<profile>
+			<id>prd</id>
+			<properties>
+				<activatedProperties>prd</activatedProperties>
+			</properties>
+		</profile>
+	</profiles>
     <groupId>com.f1</groupId>
     <artifactId>rag</artifactId>
     <version>0.0.1-SNAPSHOT</version>

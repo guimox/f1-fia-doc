@@ -3,7 +3,7 @@ name: Build and Deploy F1 FIA Doc
 on:
   push:
     branches:
-      - main
+      - testing-cicd
 
 jobs:
   build-deploy:
