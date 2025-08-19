@@ -1,0 +1,20 @@
+spring:
+  ai:
+    openai:
+      api-key: "api-key-placeholder"
+  datasource:
+    url: jdbc:postgresql://localhost:6543/ragdb
+    username: raguser
+    password: ragpassword
+    driver-class-name: org.postgresql.Driver
+jpa:
+  hibernate:
+    ddl-auto: update
+  show-sql: true
+  properties:
+    hibernate:
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+openai:
+  api:
+  embedding:
+    model: "text-embedding-ada-002"

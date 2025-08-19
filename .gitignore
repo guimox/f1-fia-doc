@@ -30,5 +30,5 @@ Thumbs.db
 postgres_data/
 *.pid
 
-src/main/resources/application.yml
+src/main/resources/application-hlg.yml
 src/main/resources/application.properties
