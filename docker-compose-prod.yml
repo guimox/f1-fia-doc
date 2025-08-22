@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${DOCKER_IMAGE_NAME:-ghcr.io/your-org/your-repo/your-container-name:latest}
+    image: ${DOCKER_IMAGE_NAME}
     ports:
       - "8080:8080"
     environment:
