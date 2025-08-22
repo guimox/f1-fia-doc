@@ -41,7 +41,6 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository }}/${{ secrets.DOCKER_CONTAINER_NAME }}:v1.0.0
 
-      # Create directory for the app on VPS if it doesn't exist
       - name: Create app directory on VPS
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -54,7 +53,6 @@ jobs:
               mkdir -p /home/${{ secrets.VPS_USERNAME }}/apps/f1-fia-doc
             fi
 
-      # Upload docker-compose-prd.yml into the app folder
       - name: Upload docker-compose-prd.yml
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -62,10 +60,10 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "docker-compose-prd.yml"
+          source: "./docker-compose-prd.yml"
           target: "/home/${{ secrets.VPS_USERNAME }}/apps/f1-fia-doc/"
 
-      # Run deployment inside the app folder
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.0
         env:
