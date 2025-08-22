@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${DOCKER_IMAGE_NAME}
+    image: ghcr.io/guimox/f1-fia-doc/f1fia:v1.0.0
     ports:
       - "8080:8080"
     environment:
