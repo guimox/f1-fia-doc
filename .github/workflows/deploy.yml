@@ -69,13 +69,35 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           envs: SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,OPENAI_TOKEN,DOCKER_IMAGE_NAME
           script: |
-            # Login to GitHub Container Registry
+            set -e  # Exit on error
+            
+            echo "=== DEBUG INFO ==="
+            echo "DOCKER_IMAGE_NAME: $DOCKER_IMAGE_NAME"
+            echo "Current images before pull:"
+            docker images
+            
+            echo "=== LOGIN ==="
             echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             
-            docker pull $DOCKER_IMAGE_NAME
+            echo "=== PULLING IMAGE ==="
+            docker pull $DOCKER_IMAGE_NAME || {
+              echo "PULL FAILED for: $DOCKER_IMAGE_NAME"
+              echo "Trying with full path..."
+              docker pull ghcr.io/guimox/f1-fia-doc/f1fia:latest
+              export DOCKER_IMAGE_NAME="ghcr.io/guimox/f1-fia-doc/f1fia:latest"
+            }
             
-            docker compose -f docker-compose-prod.yml down
+            echo "=== IMAGES AFTER PULL ==="
+            docker images
             
+            echo "=== COMPOSE DOWN ==="
+            docker compose -f docker-compose-prod.yml down || echo "No existing containers"
+            
+            echo "=== COMPOSE UP ==="
             docker compose -f docker-compose-prod.yml up -d --remove-orphans
+            
+            echo "=== CHECK CONTAINERS ==="
+            docker ps -a
+            docker compose -f docker-compose-prod.yml logs --tail=20
             
             docker image prune -f
