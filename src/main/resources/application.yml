@@ -3,7 +3,7 @@ spring:
     openai:
       api-key: "api-key-placeholder"
   datasource:
-    url: jdbc:postgresql://localhost:6543/ragdb
+    url: jdbc:postgresql://localhost:6540/ragdb
     username: raguser
     password: ragpassword
     driver-class-name: org.postgresql.Driver

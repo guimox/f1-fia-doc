@@ -3,7 +3,7 @@ name: Build and Deploy F1 FIA Doc
 on:
   push:
     branches:
-      - main
+      - testing-cicd
 
 jobs:
   build-deploy:
@@ -14,14 +14,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set Up JDK 17
+      - name: Set Up JDK 17r
         uses: actions/setup-java@v4
         with:
           distribution: "corretto"
           java-version: 17
 
       - name: Build the App
-        run: mvn clean package -Pprd --file pom.xml
+        run: mvn clean package -Pprd -DskipTests --file pom.xml
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -61,19 +61,21 @@ jobs:
           SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
           OPENAI_TOKEN: ${{ secrets.OPENAI_TOKEN }}
-          DOCKER_IMAGE_TAG: ${{ steps.meta.outputs.tags }}
+          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
         with:
           host: ${{ secrets.VPS_IP_ADDRESS }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          envs: SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,OPENAI_TOKEN,DOCKER_IMAGE_TAG
+          envs: SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,OPENAI_TOKEN,DOCKER_IMAGE_NAME
           script: |
-            # Pull the latest image
+            # Login to GitHub Container Registry
             echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-            # Update docker-compose file with new image tag if needed
-            # docker pull $(echo "$DOCKER_IMAGE_TAG" | head -n1)
-
-            # Deploy with environment variables
+            
+            docker pull $DOCKER_IMAGE_NAME
+            
+            docker compose -f docker-compose-prod.yml down
+            
             docker compose -f docker-compose-prod.yml up -d --remove-orphans
+            
+            docker image prune -f
