@@ -48,21 +48,20 @@ jobs:
           SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
           OPENAI_TOKEN: ${{ secrets.OPENAI_TOKEN }}
-          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+          DOCKER_IMAGE_TAG: ghcr.io/${{ github.repository }}/${{ secrets.DOCKER_CONTAINER_NAME }}:v1.0.0
         with:
           host: ${{ secrets.VPS_IP_ADDRESS }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          envs: SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,OPENAI_TOKEN,DOCKER_IMAGE_NAME
+          envs: SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,OPENAI_TOKEN,DOCKER_IMAGE_TAG
           script: |
-            # Login to GitHub Container Registry
             echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-            
-            docker pull ${{ secrets.DOCKER_IMAGE_NAME }}
-            
+
+            docker pull $DOCKER_IMAGE_TAG
+
             docker compose -f docker-compose-prod.yml down
-            
+
             docker compose -f docker-compose-prod.yml up -d --remove-orphans
-            
+
             docker image prune -f
