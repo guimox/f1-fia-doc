@@ -113,4 +113,8 @@ jobs:
 
             docker compose -f docker-compose-prd.yml up -d --remove-orphans
 
+            sleep 45
+
+            rm -rf db/
+
             docker image prune -f
