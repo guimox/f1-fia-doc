@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:15
+    image: pgvector/pgvector:pg16
     platform: linux/arm64
     environment:
       - POSTGRES_DB=f1fia_db
