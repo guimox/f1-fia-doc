@@ -104,17 +104,10 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
             cd /home/${{ secrets.VPS_USERNAME }}/apps/f1-fia-doc
-
             docker pull ghcr.io/${{ github.repository }}/${{ secrets.DOCKER_CONTAINER_NAME }}:v1.0.0
-
             docker compose -f docker-compose-prd.yml down
-
             docker compose -f docker-compose-prd.yml up -d --remove-orphans
-
             sleep 45
-
             rm -rf db/
-
             docker image prune -f
