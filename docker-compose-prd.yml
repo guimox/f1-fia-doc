@@ -2,7 +2,7 @@ services:
   app:
     image: ghcr.io/guimox/f1-fia-doc/f1fia:v1.0.0
     ports:
-      - "8080:8080"
+      - "8089:8089"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/f1fia_db
       - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
