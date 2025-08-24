@@ -10,7 +10,8 @@ services:
       - OPENAI_TOKEN=${OPENAI_TOKEN}
       - SPRING_PROFILES_ACTIVE=prd
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   db:
@@ -22,6 +23,12 @@ services:
       - POSTGRES_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME} -d f1fia_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
 volumes:
