@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set Up JDK 17r
+      - name: Set Up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: "corretto"
@@ -22,6 +22,9 @@ jobs:
 
       - name: Build the App
         run: mvn clean package -Pprd -DskipTests --file pom.xml
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -33,37 +36,78 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PAT_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Push Multi-Architecture Docker Image to GitHub Container Registry
         uses: docker/build-push-action@v5
         with:
           context: .
           dockerfile: Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ github.repository }}/${{ secrets.DOCKER_CONTAINER_NAME }}:v1.0.0
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deploy to VPS
+      - name: Create app directory on VPS
         uses: appleboy/ssh-action@v1.0.0
-        env:
-          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-          OPENAI_TOKEN: ${{ secrets.OPENAI_TOKEN }}
-          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
         with:
           host: ${{ secrets.VPS_IP_ADDRESS }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          envs: SPRING_DATASOURCE_URL,SPRING_DATASOURCE_USERNAME,SPRING_DATASOURCE_PASSWORD,OPENAI_TOKEN,DOCKER_IMAGE_NAME
+          script: |
+            if [ ! -d "/home/${{ secrets.VPS_USERNAME }}/apps/f1-fia-doc" ]; then
+              mkdir -p /home/${{ secrets.VPS_USERNAME }}/apps/f1-fia-doc
+            fi
+
+      - name: Upload docker-compose-prd.yml
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_IP_ADDRESS }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "docker-compose-prd.yml"
+          target: "/home/${{ secrets.VPS_USERNAME }}/apps/f1-fia-doc/"
+
+      - name: Create .env file on VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_IP_ADDRESS }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd /home/${{ secrets.VPS_USERNAME }}/apps/f1-fia-doc
+            cat > .env << EOF
+            SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+            OPENAI_TOKEN=${{ secrets.OPENAI_TOKEN }}
+            EOF
+            chmod 600 .env
+
+      - name: Upload db initialization files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_IP_ADDRESS }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "db/*"
+          target: "/home/${{ secrets.VPS_USERNAME }}/apps/f1-fia-doc/"
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_IP_ADDRESS }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
           script: |
             echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-            
-            docker pull $DOCKER_IMAGE_NAME
-            
-            docker compose -f docker-compose-prod.yml down
-            
-            docker compose -f docker-compose-prod.yml up -d --remove-orphans
-            
+            cd /home/${{ secrets.VPS_USERNAME }}/apps/f1-fia-doc
+            docker pull ghcr.io/${{ github.repository }}/${{ secrets.DOCKER_CONTAINER_NAME }}:v1.0.0
+            docker compose -f docker-compose-prd.yml down
+            docker compose -f docker-compose-prd.yml up -d --remove-orphans
+            sleep 45
+            rm -rf db/
             docker image prune -f
